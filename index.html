@@ -136,23 +136,83 @@
   @keyframes breathe { 0%,100% { transform:scale(.8); } 50% { transform:scale(1.25); } }
   #clock { font-family:var(--display); font-size:34px; color:var(--deep); }
   @media (max-width:700px) { .demo { grid-template-columns:1fr; } .stats { grid-template-columns:1fr 1fr; } .nav { border-radius:28px; } }
+  /* floating book */
+  .book { position:absolute; left:50%; top:47%; width:min(215px,38vw); transform:translate(-50%,-50%); z-index:1;
+          filter:drop-shadow(0 28px 28px rgba(190,80,115,.45)); animation:bookfloat 5s ease-in-out infinite; }
+  @keyframes bookfloat { 0%,100% { transform:translate(-50%,-50%) rotate(-7deg); } 50% { transform:translate(-50%,-60%) rotate(5deg); } }
+  @media (prefers-reduced-motion:reduce) { .book { animation:none; } }
+  /* first page + opening book */
+  main { display:flex; flex-direction:column; min-height:100vh; }
+  .hero { margin:auto 0; width:100%; }
+  .book { cursor:pointer; } .book:hover { filter:drop-shadow(0 28px 28px rgba(190,80,115,.55)) brightness(1.06); }
+  .book:focus-visible { outline:3px solid var(--deep); outline-offset:8px; border-radius:20px; }
+  .book.opening { animation:bookopen .5s ease-in forwards; }
+  @keyframes bookopen { to { transform:translate(-50%,-50%) scale(3) rotate(0deg); opacity:0; } }
+  .hint { position:absolute; left:50%; top:calc(47% + 150px); transform:translateX(-50%); z-index:2; padding:7px 16px; border-radius:999px; font-size:12px; font-weight:600; color:var(--deep);
+          background:rgba(255,255,255,.6); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.85); animation:pulse 2s ease-in-out infinite; white-space:nowrap; }
+  @keyframes pulse { 50% { transform:translateX(-50%) translateY(5px); } }
+  body.reading { overflow:hidden; }
+  #bookApp { position:fixed; inset:10px; z-index:8; border-radius:34px; padding:10px 10px 10px 16px; display:flex;
+             background:linear-gradient(135deg,#e993ad,#b24f6c); box-shadow:0 30px 80px rgba(120,30,60,.45); animation:spread .6s both; }
+  @keyframes spread { from { transform:scale(.25) rotate(-6deg); opacity:0; } }
+  .paper { flex:1; min-width:0; display:flex; flex-direction:column; border-radius:24px; overflow:hidden; background:linear-gradient(90deg,#f1dce3,#fff9f5 3%,#fff9f5 97%,#f1dce3); }
+  .tabs { display:flex; gap:8px; padding:12px 16px 0; overflow-x:auto; scrollbar-width:none; background:#fdeff4; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tabs button { margin:0; flex:none; border-radius:14px 14px 0 0; padding:9px 18px; background:#f6cfdc; color:var(--deep); box-shadow:none; font-size:13px; }
+  .tabs button.on { background:#fff9f5; font-weight:600; }
+  .tabs .x { margin-left:auto; background:var(--deep); color:#fff; }
+  .pages { flex:1; overflow-y:auto; padding:8px 22px 30px; }
+  #bookApp .reveal { opacity:1; transform:none; }
+  #bookApp .band { width:auto; margin:22px 0; border-radius:28px; padding:28px 18px; }
+  .off { display:none !important; }
+  .fab { z-index:9; }
+  /* seamless open: full screen pink cover, circle reveal from the book, no dark shadows */
+  .book { overflow:visible; -webkit-tap-highlight-color:transparent; }
+  .book:focus { outline:none; }
+  .book.opening { animation:bookopen .7s ease-in forwards; filter:none; }
+  @keyframes bookopen { 60% { opacity:1; } to { transform:translate(-50%,-50%) scale(2.2) rotate(0deg); opacity:0; filter:none; } }
+  #bookApp { inset:0; border-radius:0; box-shadow:none; padding:10px 10px 10px 18px; animation:reveal .85s cubic-bezier(.65,0,.35,1) backwards;
+             background:linear-gradient(135deg,#f4a9c0,#dd809b 50%,#c4617f); }
+  @keyframes reveal { from { clip-path:circle(0 at var(--ox,50%) var(--oy,50%)); } to { clip-path:circle(150vmax at var(--ox,50%) var(--oy,50%)); } }
+  #bookApp.closing { animation:fadeout .3s forwards; }
+  @keyframes fadeout { to { opacity:0; } }
+  .phone { background:linear-gradient(145deg,#fff,#f6cfdc); box-shadow:0 20px 40px rgba(190,80,115,.3); }
+  .screen::before { background:#7d3a52; }
 </style>
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
 <main>
   <header class="nav">
-    <nav><a href="#add">Subjects</a><a href="#plan">Plan</a><a href="#explain">Explain</a><a href="#quiz">Quiz</a><a href="#compare">Compare</a></nav>
+    <nav><a href="#" onclick="openBook('subjects');return false">Subjects</a><a href="#" onclick="openBook('plan');return false">Plan</a><a href="#" onclick="openBook('explain');return false">Explain</a><a href="#" onclick="openBook('quiz');return false">Quiz</a><a href="#" onclick="openBook('compare');return false">Compare</a></nav>
     <div class="logo">STUDYPILOT</div>
     <div class="acct"><span id="who" class="small">Saved in this browser</span><br><button id="loginBtn" class="soft" onclick="toggleLogin()">Log in / Sign up</button></div>
   </header>
 
   <div class="hero">
     <h1>your plan</h1>
-    <div class="blob"></div><div class="blob chrome"></div>
+    <svg class="book" viewBox="0 0 240 290" role="button" tabindex="0" aria-label="Open the book" onclick="openBook()" onkeydown="if(event.key==='Enter')openBook()">
+      <defs>
+        <linearGradient id="cov" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8cfdc"/><stop offset=".55" stop-color="#dd809b"/><stop offset="1" stop-color="#b24f6c"/></linearGradient>
+        <linearGradient id="spn" x1="0" x2="1"><stop offset="0" stop-color="#a8475f"/><stop offset="1" stop-color="#d36f8e"/></linearGradient>
+      </defs>
+      <rect x="44" y="44" width="170" height="222" rx="10" fill="#fff7f0" stroke="#ecd5dc"/>
+      <path d="M205 56V254M198 56V254M191 56V254" stroke="#ecd5dc" stroke-width="1.5"/>
+      <rect x="28" y="28" width="172" height="222" rx="16" fill="url(#cov)"/>
+      <rect x="28" y="28" width="24" height="222" rx="16" fill="url(#spn)"/>
+      <path d="M52 28V250" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
+      <ellipse cx="95" cy="62" rx="52" ry="22" fill="#fff" opacity=".22"/>
+      <circle cx="126" cy="112" r="32" fill="#fff" opacity=".88"/>
+      <path d="M126 86L133 105L152 112L133 119L126 138L119 119L100 112L119 105Z" fill="#dd809b"/>
+      <rect x="82" y="168" width="90" height="9" rx="4.5" fill="#fff" opacity=".9"/>
+      <rect x="98" y="187" width="58" height="7" rx="3.5" fill="#fff" opacity=".6"/>
+      <path d="M166 250V288L177 277L188 288V250Z" fill="#c4617f"/>
+    </svg>
+    <div class="blob chrome"></div>
+    <div class="hint">Tap the book to open it</div>
     <div class="hero-row">
       <div><span class="small">About</span><b>What we do</b></div>
-      <div><p>Every StudyPilot plan is the perfect mix of AI help and good study habits.</p><button onclick="location.href='#add'">Start planning</button></div>
+      <div><p>Every StudyPilot plan is the perfect mix of AI help and good study habits.</p><button onclick="openBook('subjects')">Start planning</button></div>
     </div>
   </div>
 
@@ -166,7 +226,7 @@
     </div>
   </section>
 
-  <section id="add">
+  <section id="add" data-page="subjects">
     <h2>2. Add a subject</h2>
     <form id="form">
       <label for="name">Subject name</label>
@@ -183,7 +243,11 @@
     </form>
   </section>
 
-    <section id="demo">
+    <div id="bookApp" hidden>
+   <div class="paper">
+    <div class="tabs" id="tabs"></div>
+    <div class="pages" id="pagesBox">
+  <section id="demo" data-page="home">
     <h2>See it in action</h2>
     <div class="demo">
       <div class="phone"><div class="screen">
@@ -199,7 +263,7 @@
     </div>
   </section>
 
-  <div class="railwrap">
+  <div class="railwrap" data-page="home">
     <h2>Features <span class="arrows"><button class="soft" onclick="rail(-1)">&larr;</button><button class="soft" onclick="rail(1)">&rarr;</button></span></h2>
     <div class="rail" id="rail">
       <div><span class="tag">Planner</span><h3>Smart plan</h3>Harder subjects and nearer exams get more time.</div>
@@ -212,21 +276,21 @@
     </div>
   </div>
 
-  <div class="stats">
+  <div class="stats" data-page="home">
     <div class="tile"><b id="st1">0</b>subjects</div>
     <div class="tile"><b id="st2">0</b>sessions done</div>
     <div class="tile"><b id="st3">0</b>hours planned a day</div>
     <div class="tile"><b id="st4">0%</b>plan complete</div>
   </div>
 
-  <div class="card word"><span class="small">Today's study word</span><q id="word"></q><span class="small">Changes at midnight</span></div>
+  <div class="card word" data-page="home"><span class="small">Today's study word</span><q id="word"></q><span class="small">Changes at midnight</span></div>
 
-  <div class="band">
+  <div class="band" data-page="subjects">
     <h2 class="bandtitle">Your subjects</h2>
     <div id="subjectList"></div>
   </div>
 
-  <section id="plan">
+  <section id="plan" data-page="plan">
     <h2>3. Study plan</h2>
     <p>StudyPilot asks AI for a plan. If AI is not connected yet, it builds a smart plan on its own.</p>
     <button id="genBtn" onclick="makePlan()">✦ Generate my plan</button>
@@ -239,7 +303,7 @@
     <div id="planOut"></div>
   </section>
 
-  <section id="explain">
+  <section id="explain" data-page="explain">
     <h2>4. Explain It My Way</h2>
     <label for="topic">What do you want to understand?</label>
     <input id="topic" placeholder="Example: binary search">
@@ -253,7 +317,7 @@
     <div id="exOut" class="out"></div>
   </section>
 
-  <section id="quiz">
+  <section id="quiz" data-page="quiz">
     <h2>5. Quiz Arena</h2>
     <p class="small">The AI writes questions from the topics of one of your subjects.</p>
     <div class="row">
@@ -267,7 +331,7 @@
     <div id="quizArea"></div>
   </section>
 
-  <section id="compare">
+  <section id="compare" data-page="compare">
     <h2>6. Bad prompt vs good prompt</h2>
     <p class="small">Same subjects, two prompts. See what prompt engineering changes.</p>
     <button id="cmpBtn">Compare</button>
@@ -278,7 +342,9 @@
   </section>
 
   <p class="small">Student project inspired by a prompt-engineering course. AI plans can contain mistakes, so always review them.</p>
-  <div class="wordmark">STUDYPILOT</div>
+    </div>
+   </div>
+  </div>
 </main>
 
 <button class="fab" onclick="calm(true)">Overwhelmed?</button>
@@ -622,6 +688,27 @@ function focusTimer() {
     if (secs <= 0) { clearInterval(clockT); clockT = null; secs = 1500; $('clockBtn').textContent = 'Start 25 minute focus'; $('breath').textContent = 'Great work! Take a 5 minute break.'; }
   }, 1000);
 }
+
+// ---------- First page + opening book ----------
+const PAGES = [['home', 'Features'], ['subjects', 'Subjects'], ['plan', 'Plan'], ['explain', 'Explain'], ['quiz', 'Quiz'], ['compare', 'Compare']];
+$('tabs').innerHTML = PAGES.map(x => '<button data-tab="' + x[0] + '" onclick="openPage(\'' + x[0] + '\')">' + x[1] + '</button>').join('') + '<button class="x" onclick="closeBook()">Close &#10005;</button>';
+function openPage(name) {
+  document.querySelectorAll('#bookApp [data-page]').forEach(el => el.classList.toggle('off', el.dataset.page !== name));
+  document.querySelectorAll('#tabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  $('pagesBox').scrollTop = 0;
+}
+function openBook(page) {
+  if (!$('bookApp').hidden) { openPage(page || 'home'); return; }
+  const b = document.querySelector('.book'), r = b.getBoundingClientRect();   // the reveal grows out of the book
+  $('bookApp').style.setProperty('--ox', (r.left + r.width / 2) + 'px'); $('bookApp').style.setProperty('--oy', (r.top + r.height / 2) + 'px');
+  b.classList.add('opening'); $('bookApp').hidden = false; document.body.classList.add('reading'); openPage(page || 'home');
+  setTimeout(() => b.classList.remove('opening'), 900);
+}
+function closeBook() {
+  const a = $('bookApp'); a.classList.add('closing');
+  setTimeout(() => { a.hidden = true; a.classList.remove('closing'); document.body.classList.remove('reading'); }, 300);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('bookApp').hidden) closeBook(); });
 
 // ---------- Supabase: log in, sign up, Google, cloud sync ----------
 let mode = 'login';
